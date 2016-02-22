@@ -97,6 +97,8 @@ class Span extends OpenTracing\Span
         ];
         $this->data->logs[] = $eventData;
 
+        $this->getTracer()->getRecorder()->log($this, $timestamp, $event, $payload);
+
         return $this;
     }
 
