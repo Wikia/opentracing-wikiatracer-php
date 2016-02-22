@@ -62,6 +62,7 @@ class SplitTextPropagator extends Propagator
     {
         $this->validateSpan($span);
 
+        /** @var Span $span */
         $spanData = $span->getData();
         $carrier[self::FIELD_STATE] = [
             self::FIELD_TRACE_ID => $spanData->traceId,

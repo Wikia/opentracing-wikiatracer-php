@@ -69,6 +69,7 @@ class SplitBinaryPropagator extends Propagator
     {
         $this->validateSpan($span);
 
+        /** @var Span $span */
         $spanData = $span->getData();
         $state = $this->formatId($spanData->traceId) . $this->formatId($spanData->spanId);
         $attributes = $this->encodeArray($spanData->attributes);
