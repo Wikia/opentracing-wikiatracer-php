@@ -2,7 +2,6 @@
 
 namespace OpenTracing\Wikia\Recorder;
 
-use OpenTracing\Wikia\Recorder;
 use OpenTracing\Wikia\Span;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
