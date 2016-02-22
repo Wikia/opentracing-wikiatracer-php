@@ -14,6 +14,8 @@ class Span extends OpenTracing\Span
     {
         $this->tracer = $tracer;
         $this->data = $data;
+
+        $this->getTracer()->getRecorder()->startSpan($this);
     }
 
     /**
@@ -40,7 +42,7 @@ class Span extends OpenTracing\Span
      */
     public function finish($finishTime = null)
     {
-        // noop
+        $this->getTracer()->getRecorder()->finishSpan($this);
     }
 
     /**
