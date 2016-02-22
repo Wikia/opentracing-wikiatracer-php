@@ -1,6 +1,8 @@
 <?php
 
-namespace OpenTracing\Wikia;
+namespace OpenTracing\Wikia\Recorder;
+
+use OpenTracing\Wikia\Span;
 
 abstract class Recorder
 {

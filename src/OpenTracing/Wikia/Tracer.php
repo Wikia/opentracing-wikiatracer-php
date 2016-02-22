@@ -3,6 +3,7 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\Wikia\Recorder\Recorder;
 use OpenTracing\Exception\InvalidFormatException;
 
 class Tracer extends OpenTracing\Tracer
@@ -114,5 +115,9 @@ class Tracer extends OpenTracing\Tracer
     public function flush()
     {
 
+    }
+
+    public function getRecorder() {
+        return $this->recorder;
     }
 }
