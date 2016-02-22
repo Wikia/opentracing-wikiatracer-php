@@ -34,13 +34,13 @@ class SplitTextPropagator extends Propagator
             throw new EmptyCarrierException();
         }
         $state = $carrier->getState();
-        $attributes = $carrier->getAttributes();
+        $baggage = $carrier->getBaggage();
 
-        if (is_null($state) && is_null($attributes)) {
+        if (is_null($state) && is_null($baggage)) {
             throw new EmptyCarrierException();
         }
 
-        if (!is_array($state) || !is_array($attributes)) {
+        if (!is_array($state) || !is_array($baggage)) {
             throw new CorruptedCarrierException();
         }
         if (!array_key_exists(self::FIELD_TRACE_ID, $state) || !array_key_exists(self::FIELD_SPAN_ID, $state)) {
@@ -50,7 +50,7 @@ class SplitTextPropagator extends Propagator
         $traceId = $state[self::FIELD_TRACE_ID];
         $spanId = $state[self::FIELD_SPAN_ID];
 
-        return $this->tracer->createSpan($traceId, $spanId, $attributes);
+        return $this->tracer->createSpan($traceId, $spanId, $baggage);
     }
 
     /**
@@ -82,6 +82,6 @@ class SplitTextPropagator extends Propagator
                 self::FIELD_TRACE_ID => $spanData->traceId,
                 self::FIELD_SPAN_ID => $spanData->spanId,
             ])
-            ->setAttributes($spanData->attributes);
+            ->setBaggage($spanData->baggage);
     }
 }

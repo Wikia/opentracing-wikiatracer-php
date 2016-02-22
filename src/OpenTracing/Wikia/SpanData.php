@@ -38,7 +38,7 @@ class SpanData
     /**
      * @var array
      */
-    public $attributes = [];
+    public $baggage = [];
     /**
      * @var array
      */

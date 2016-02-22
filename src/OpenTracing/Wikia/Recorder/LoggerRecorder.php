@@ -31,7 +31,7 @@ class LoggerRecorder extends Recorder
     public function log(Span $span, $timestamp, $event, $payload) {
         $spanData = $span->getData();
         $context = array_merge(
-            $spanData->attributes,
+            $spanData->baggage,
             $payload ?: [],
             [
                 'timestamp' => $timestamp,

@@ -36,7 +36,7 @@ class Tracer extends OpenTracing\Tracer
             $newSpanData->parentSpanId = $parentSpanData->spanId;
             $newSpanData->spanId = $this->randomTextualId();
 
-            $newSpanData->attributes = $parentSpanData->attributes;
+            $newSpanData->baggage = $parentSpanData->baggage;
         }
 
         $newSpanData->operationName = $operationName;
@@ -73,13 +73,13 @@ class Tracer extends OpenTracing\Tracer
         return $this->getPropagator($format);
     }
 
-    public function createSpan($traceId, $spanId, $attributes)
+    public function createSpan($traceId, $spanId, $baggage)
     {
         $spanData = new SpanData();
         $spanData->traceId = $traceId;
         $spanData->spanId = $spanId;
         $spanData->startTime = microtime(true);
-        $spanData->attributes = $attributes;
+        $spanData->baggage = $baggage;
 
         return new Span($this, $spanData);
     }

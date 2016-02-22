@@ -10,7 +10,7 @@ abstract class Propagator implements Injector, Extractor
 {
 
     const FIELD_STATE = 'state';
-    const FIELD_ATTRIBUTES = 'attributes';
+    const FIELD_BAGGAGE = 'baggage';
     const FIELD_TRACE_ID = 'traceid';
     const FIELD_SPAN_ID = 'spanid';
 

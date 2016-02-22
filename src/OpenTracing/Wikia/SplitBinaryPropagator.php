@@ -34,13 +34,13 @@ class SplitBinaryPropagator extends Propagator
             throw new EmptyCarrierException();
         }
         $state = $carrier->getState();
-        $attributes = $carrier->getAttributes();
+        $baggage = $carrier->getBaggage();
 
-        if (is_null($state) && is_null($attributes)) {
+        if (is_null($state) && is_null($baggage)) {
             throw new EmptyCarrierException();
         }
 
-        if (!is_string($state) || !is_string($attributes)) {
+        if (!is_string($state) || !is_string($baggage)) {
             throw new CorruptedCarrierException();
         }
 
@@ -51,12 +51,12 @@ class SplitBinaryPropagator extends Propagator
         $spanId = substr($state, 8, 8);
 
         try {
-            $attributes = $this->decodeArray($attributes);
+            $baggage = $this->decodeArray($baggage);
         } catch (\InvalidArgumentException $e) {
             throw new CorruptedCarrierException();
         }
 
-        return $this->tracer->createSpan($traceId, $spanId, $attributes);
+        return $this->tracer->createSpan($traceId, $spanId, $baggage);
     }
 
     /**
@@ -84,11 +84,11 @@ class SplitBinaryPropagator extends Propagator
         /** @var Span $span */
         $spanData = $span->getData();
         $state = $this->formatId($spanData->traceId) . $this->formatId($spanData->spanId);
-        $attributes = $this->encodeArray($spanData->attributes);
+        $baggage = $this->encodeArray($spanData->baggage);
 
         $carrier
             ->setState($state)
-            ->setAttributes($attributes);
+            ->setBaggage($baggage);
     }
 
     private function formatId($id)

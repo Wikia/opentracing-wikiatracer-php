@@ -13,7 +13,7 @@ class RawHttpHeadersPropagator extends Propagator
 
     const HTTP_HEADER_COMMON_PREFIX_LOWER = 'opentracing-';
     const HTTP_HEADER_STATE_PREFIX_LOWER = 'opentracing-';
-    const HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER = 'opentracing-attribute-';
+    const HTTP_HEADER_BAGGAGE_PREFIX_LOWER = 'opentracing-baggage-';
 
     /**
      * Returns a Span instance with operation name $operationName
@@ -41,27 +41,27 @@ class RawHttpHeadersPropagator extends Propagator
 
         $commonPrefixLen = strlen(self::HTTP_HEADER_COMMON_PREFIX_LOWER);
         $statePrefixLen = strlen(self::HTTP_HEADER_STATE_PREFIX_LOWER);
-        $attributesPrefixLen = strlen(self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER);
+        $baggagePrefixLen = strlen(self::HTTP_HEADER_BAGGAGE_PREFIX_LOWER);
 
         $state = [];
-        $attributes = [];
+        $baggage = [];
         foreach ($carrier as $k => $v) {
             $k = strtolower($k);
             if (substr($k, 0, $commonPrefixLen) !== self::HTTP_HEADER_COMMON_PREFIX_LOWER) {
                 continue;
             }
-            if (substr($k, 0, $attributesPrefixLen) != self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER) {
-                $kk = substr($k, $attributesPrefixLen);
-                $attributes[$kk] = $v;
+            if (substr($k, 0, $baggagePrefixLen) != self::HTTP_HEADER_BAGGAGE_PREFIX_LOWER) {
+                $kk = substr($k, $baggagePrefixLen);
+                $baggage[$kk] = $v;
             } elseif (substr($k, 0, $statePrefixLen) != self::HTTP_HEADER_STATE_PREFIX_LOWER) {
-                $kk = substr($k, $attributesPrefixLen);
+                $kk = substr($k, $baggagePrefixLen);
                 $state[$kk] = $v;
             }
         }
 
         $textCarrier = (new SplitTextCarrier())
             ->setState($state)
-            ->setAttributes($attributes);
+            ->setBaggage($baggage);
 
         return (new SplitTextPropagator($this->tracer))->joinTrace($operationName, $textCarrier);
     }
@@ -94,8 +94,8 @@ class RawHttpHeadersPropagator extends Propagator
         foreach ($textCarrier->getState() as $k => $v) {
             $carrier[self::HTTP_HEADER_STATE_PREFIX_LOWER . strtolower($k)] = $v;
         }
-        foreach ($textCarrier->getAttributes() as $k => $v) {
-            $carrier[self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER . strtolower($k)] = $v;
+        foreach ($textCarrier->getBaggage() as $k => $v) {
+            $carrier[self::HTTP_HEADER_BAGGAGE_PREFIX_LOWER . strtolower($k)] = $v;
         }
     }
 }

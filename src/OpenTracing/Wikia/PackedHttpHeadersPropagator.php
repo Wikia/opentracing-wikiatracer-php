@@ -12,7 +12,7 @@ class PackedHttpHeadersPropagator extends Propagator
 {
 
     const HTTP_HEADER_STATE_LOWER = 'opentracing-state';
-    const HTTP_HEADER_ATTRIBUTES_LOWER = 'opentracing-attributes';
+    const HTTP_HEADER_BAGGAGE_LOWER = 'opentracing-baggage';
 
     /**
      * Returns a Span instance with operation name $operationName
@@ -39,7 +39,7 @@ class PackedHttpHeadersPropagator extends Propagator
         }
 
         $state = null;
-        $attributes = null;
+        $baggage = null;
 
         foreach ($carrier as $k => $v) {
             $k = strtolower($k);
@@ -47,15 +47,15 @@ class PackedHttpHeadersPropagator extends Propagator
                 case self::HTTP_HEADER_STATE_LOWER:
                     $state = base64_decode($v);
                     break;
-                case self::HTTP_HEADER_ATTRIBUTES_LOWER:
-                    $attributes = base64_decode($v);
+                case self::HTTP_HEADER_BAGGAGE_LOWER:
+                    $baggage = base64_decode($v);
                     break;
             }
         }
 
         $binaryCarrier = (new SplitBinaryCarrier())
             ->setState($state)
-            ->setAttributes($attributes);
+            ->setBaggage($baggage);
 
         return (new SplitBinaryPropagator($this->tracer))->joinTrace($operationName, $binaryCarrier);
     }
@@ -86,6 +86,6 @@ class PackedHttpHeadersPropagator extends Propagator
         (new SplitBinaryPropagator($this->tracer))->injectSpan($span, $binaryCarrier);
 
         $carrier[self::HTTP_HEADER_STATE_LOWER] = base64_encode($binaryCarrier->getState());
-        $carrier[self::HTTP_HEADER_ATTRIBUTES_LOWER] = base64_encode($binaryCarrier->getAttributes());
+        $carrier[self::HTTP_HEADER_BAGGAGE_LOWER] = base64_encode($binaryCarrier->getBaggage());
     }
 }
