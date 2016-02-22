@@ -1,12 +1,13 @@
 <?php
 
-namespace OpenTracing\Wikia;
+namespace OpenTracing\Wikia\Propagator;
 
 use OpenTracing;
 use OpenTracing\Exception\CorruptedCarrierException;
 use OpenTracing\Exception\EmptyCarrierException;
 use OpenTracing\Exception\InvalidCarrierException;
 use OpenTracing\SplitTextCarrier;
+use OpenTracing\Wikia\Span;
 
 class SplitTextPropagator extends Propagator
 {

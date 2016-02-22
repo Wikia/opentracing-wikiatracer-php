@@ -1,12 +1,13 @@
 <?php
 
-namespace OpenTracing\Wikia;
+namespace OpenTracing\Wikia\Propagator;
 
 use OpenTracing;
 use OpenTracing\SplitBinaryCarrier;
 use OpenTracing\Exception\EmptyCarrierException;
 use OpenTracing\Exception\CorruptedCarrierException;
 use OpenTracing\Exception\InvalidCarrierException;
+use OpenTracing\Wikia\Span;
 
 class PackedHttpHeadersPropagator extends Propagator
 {

@@ -99,10 +99,10 @@ class Tracer extends OpenTracing\Tracer
     {
         if (!is_array(self::$propagators)) {
             self::$propagators = [
-                Format::SPLIT_TEXT => new SplitTextPropagator($this),
-                Format::SPLIT_BINARY => new SplitBinaryPropagator($this),
-                Format::PACKED_HTTP_HEADERS => new PackedHttpHeadersPropagator($this),
-                Format::RAW_HTTP_HEADERS => new RawHttpHeadersPropagator($this),
+                Format::SPLIT_TEXT => new Propagator\SplitTextPropagator($this),
+                Format::SPLIT_BINARY => new Propagator\SplitBinaryPropagator($this),
+                Format::PACKED_HTTP_HEADERS => new Propagator\PackedHttpHeadersPropagator($this),
+                Format::RAW_HTTP_HEADERS => new Propagator\RawHttpHeadersPropagator($this),
             ];
         }
     }

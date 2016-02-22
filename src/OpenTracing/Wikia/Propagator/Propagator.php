@@ -1,10 +1,13 @@
 <?php
 
-namespace OpenTracing\Wikia;
+namespace OpenTracing\Wikia\Propagator;
 
 use OpenTracing;
 use OpenTracing\Extractor;
 use OpenTracing\Injector;
+use OpenTracing\Wikia\Tracer;
+use OpenTracing\Wikia\Span;
+
 
 abstract class Propagator implements Injector, Extractor
 {
