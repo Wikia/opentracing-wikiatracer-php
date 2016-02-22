@@ -2,7 +2,10 @@
 
 namespace OpenTracing\Wikia;
 
-interface Recorder
+abstract class Recorder
 {
 
+    public function log(Span $span, $timestamp, $event, $payload) {
+        // noop
+    }
 }
