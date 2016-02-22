@@ -5,10 +5,11 @@ namespace OpenTracing\Wikia\Recorder;
 use OpenTracing\Wikia\Recorder;
 use OpenTracing\Wikia\Span;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 
 class LoggerRecorder extends Recorder
 {
-    const DEFAULT_LEVEL = 200; // INFO
+    const DEFAULT_LEVEL = LogLevel::INFO;
 
     private $logger;
 
