@@ -3,8 +3,10 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
-use OpenTracing\Exception\EmptyCarrierException;
 use OpenTracing\Exception\CorruptedCarrierException;
+use OpenTracing\Exception\EmptyCarrierException;
+use OpenTracing\Exception\InvalidCarrierException;
+use OpenTracing\SplitTextCarrier;
 
 class SplitTextPropagator extends Propagator
 {
@@ -28,19 +30,25 @@ class SplitTextPropagator extends Propagator
      */
     function joinTrace($operationName, &$carrier)
     {
-        if (!$carrier) {
+        if (!$carrier instanceof SplitTextCarrier) {
             throw new EmptyCarrierException();
         }
-        if (!is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )
-            || !array_key_exists(self::FIELD_TRACE_ID, $carrier[self::FIELD_STATE])
-            || !array_key_exists(self::FIELD_SPAN_ID, $carrier[self::FIELD_STATE])
-        ) {
+        $state = $carrier->getState();
+        $attributes = $carrier->getAttributes();
+
+        if (is_null($state) && is_null($attributes)) {
+            throw new EmptyCarrierException();
+        }
+
+        if (!is_array($state) || !is_array($attributes)) {
+            throw new CorruptedCarrierException();
+        }
+        if (!array_key_exists(self::FIELD_TRACE_ID, $state) || !array_key_exists(self::FIELD_SPAN_ID, $state)) {
             throw new CorruptedCarrierException();
         }
 
-        $traceId = $carrier[self::FIELD_STATE][self::FIELD_TRACE_ID];
-        $spanId = $carrier[self::FIELD_STATE][self::FIELD_SPAN_ID];
-        $attributes = $carrier[self::FIELD_ATTRIBUTES];
+        $traceId = $state[self::FIELD_TRACE_ID];
+        $spanId = $state[self::FIELD_SPAN_ID];
 
         return $this->tracer->createSpan($traceId, $spanId, $attributes);
     }
@@ -54,6 +62,8 @@ class SplitTextPropagator extends Propagator
      * Implementations may raise implementation-specific exception
      * if injection fails.
      *
+     * @throws InvalidCarrierException
+     *
      * @param OpenTracing\Span $span
      * @param $carrier
      * @return void
@@ -61,13 +71,17 @@ class SplitTextPropagator extends Propagator
     function injectSpan(OpenTracing\Span $span, &$carrier)
     {
         $this->validateSpan($span);
+        if (!$carrier instanceof SplitTextCarrier) {
+            throw new InvalidCarrierException();
+        }
 
         /** @var Span $span */
         $spanData = $span->getData();
-        $carrier[self::FIELD_STATE] = [
-            self::FIELD_TRACE_ID => $spanData->traceId,
-            self::FIELD_SPAN_ID => $spanData->spanId,
-        ];
-        $carrier[self::FIELD_ATTRIBUTES] = $spanData->attributes;
+        $carrier
+            ->setState([
+                self::FIELD_TRACE_ID => $spanData->traceId,
+                self::FIELD_SPAN_ID => $spanData->spanId,
+            ])
+            ->setAttributes($spanData->attributes);
     }
 }

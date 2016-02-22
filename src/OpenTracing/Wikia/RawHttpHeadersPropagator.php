@@ -3,6 +3,10 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\SplitTextCarrier;
+use OpenTracing\Exception\EmptyCarrierException;
+use OpenTracing\Exception\CorruptedCarrierException;
+use OpenTracing\Exception\InvalidCarrierException;
 
 class RawHttpHeadersPropagator extends Propagator
 {
@@ -21,20 +25,26 @@ class RawHttpHeadersPropagator extends Propagator
      *
      * Upon success, the returned Span instance is already started.
      *
+     * @throws EmptyCarrierException
+     * @throws CorruptedCarrierException
+     * @throws InvalidCarrierException
+     *
      * @param string $operationName
      * @param mixed $carrier
      * @return Span
      */
     public function joinTrace($operationName, &$carrier)
     {
+        if (!is_array($carrier)) {
+            throw new InvalidCarrierException();
+        }
+
         $commonPrefixLen = strlen(self::HTTP_HEADER_COMMON_PREFIX_LOWER);
         $statePrefixLen = strlen(self::HTTP_HEADER_STATE_PREFIX_LOWER);
         $attributesPrefixLen = strlen(self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER);
 
-        $textCarrier = [
-            self::FIELD_STATE => [],
-            self::FIELD_ATTRIBUTES => [],
-        ];
+        $state = [];
+        $attributes = [];
         foreach ($carrier as $k => $v) {
             $k = strtolower($k);
             if (substr($k, 0, $commonPrefixLen) !== self::HTTP_HEADER_COMMON_PREFIX_LOWER) {
@@ -42,14 +52,16 @@ class RawHttpHeadersPropagator extends Propagator
             }
             if (substr($k, 0, $attributesPrefixLen) != self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER) {
                 $kk = substr($k, $attributesPrefixLen);
-                $textCarrier[self::FIELD_ATTRIBUTES][$kk] = $v;
-            } else {
-                if (substr($k, 0, $statePrefixLen) != self::HTTP_HEADER_STATE_PREFIX_LOWER) {
-                    $kk = substr($k, $attributesPrefixLen);
-                    $textCarrier[self::FIELD_STATE][$kk] = $v;
-                }
+                $attributes[$kk] = $v;
+            } elseif (substr($k, 0, $statePrefixLen) != self::HTTP_HEADER_STATE_PREFIX_LOWER) {
+                $kk = substr($k, $attributesPrefixLen);
+                $state[$kk] = $v;
             }
         }
+
+        $textCarrier = (new SplitTextCarrier())
+            ->setState($state)
+            ->setAttributes($attributes);
 
         return (new SplitTextPropagator($this->tracer))->joinTrace($operationName, $textCarrier);
     }
@@ -63,6 +75,8 @@ class RawHttpHeadersPropagator extends Propagator
      * Implementations may raise implementation-specific exception
      * if injection fails.
      *
+     * @throws InvalidCarrierException
+     *
      * @param OpenTracing\Span $span
      * @param mixed $carrier
      * @return void
@@ -70,14 +84,17 @@ class RawHttpHeadersPropagator extends Propagator
     public function injectSpan(OpenTracing\Span $span, &$carrier)
     {
         $this->validateSpan($span);
+        if (!is_array($carrier)) {
+            throw new InvalidCarrierException();
+        }
 
-        $textCarrier = [];
+        $textCarrier = new SplitTextCarrier();
         (new SplitTextPropagator($this->tracer))->injectSpan($span, $textCarrier);
 
-        foreach ($textCarrier[self::FIELD_STATE] as $k => $v) {
+        foreach ($textCarrier->getState() as $k => $v) {
             $carrier[self::HTTP_HEADER_STATE_PREFIX_LOWER . strtolower($k)] = $v;
         }
-        foreach ($textCarrier[self::FIELD_ATTRIBUTES] as $k => $v) {
+        foreach ($textCarrier->getAttributes() as $k => $v) {
             $carrier[self::HTTP_HEADER_ATTRIBUTES_PREFIX_LOWER . strtolower($k)] = $v;
         }
     }

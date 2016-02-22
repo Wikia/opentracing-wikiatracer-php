@@ -3,8 +3,10 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\SplitBinaryCarrier;
 use OpenTracing\Exception\EmptyCarrierException;
 use OpenTracing\Exception\CorruptedCarrierException;
+use OpenTracing\Exception\InvalidCarrierException;
 
 class SplitBinaryPropagator extends Propagator
 {
@@ -28,14 +30,20 @@ class SplitBinaryPropagator extends Propagator
      */
     public function joinTrace($operationName, &$carrier)
     {
-        if (!$carrier) {
+        if (!$carrier instanceof SplitBinaryCarrier) {
             throw new EmptyCarrierException();
         }
-        if (!is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )) {
+        $state = $carrier->getState();
+        $attributes = $carrier->getAttributes();
+
+        if (is_null($state) && is_null($attributes)) {
+            throw new EmptyCarrierException();
+        }
+
+        if (!is_string($state) || !is_string($attributes)) {
             throw new CorruptedCarrierException();
         }
 
-        $state = $carrier[self::FIELD_STATE];
         if (strlen($state) != 16) {
             throw new CorruptedCarrierException();
         }
@@ -43,7 +51,6 @@ class SplitBinaryPropagator extends Propagator
         $spanId = substr($state, 8, 8);
 
         try {
-            $attributes = $carrier[self::FIELD_ATTRIBUTES];
             $attributes = $this->decodeArray($attributes);
         } catch (\InvalidArgumentException $e) {
             throw new CorruptedCarrierException();
@@ -61,6 +68,8 @@ class SplitBinaryPropagator extends Propagator
      * Implementations may raise implementation-specific exception
      * if injection fails.
      *
+     * @throws InvalidCarrierException
+     *
      * @param OpenTracing\Span $span
      * @param $carrier
      * @return void
@@ -68,14 +77,18 @@ class SplitBinaryPropagator extends Propagator
     public function injectSpan(OpenTracing\Span $span, &$carrier)
     {
         $this->validateSpan($span);
+        if (!$carrier instanceof SplitBinaryCarrier) {
+            throw new InvalidCarrierException();
+        }
 
         /** @var Span $span */
         $spanData = $span->getData();
         $state = $this->formatId($spanData->traceId) . $this->formatId($spanData->spanId);
         $attributes = $this->encodeArray($spanData->attributes);
 
-        $carrier[self::FIELD_STATE] = $state;
-        $carrier[self::FIELD_ATTRIBUTES] = $attributes;
+        $carrier
+            ->setState($state)
+            ->setAttributes($attributes);
     }
 
     private function formatId($id)

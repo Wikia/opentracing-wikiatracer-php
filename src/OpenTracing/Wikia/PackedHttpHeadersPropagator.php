@@ -3,6 +3,10 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\SplitBinaryCarrier;
+use OpenTracing\Exception\EmptyCarrierException;
+use OpenTracing\Exception\CorruptedCarrierException;
+use OpenTracing\Exception\InvalidCarrierException;
 
 class PackedHttpHeadersPropagator extends Propagator
 {
@@ -20,24 +24,38 @@ class PackedHttpHeadersPropagator extends Propagator
      *
      * Upon success, the returned Span instance is already started.
      *
+     * @throws EmptyCarrierException
+     * @throws CorruptedCarrierException
+     * @throws InvalidCarrierException
+     *
      * @param string $operationName
      * @param mixed $carrier
      * @return Span
      */
     public function joinTrace($operationName, &$carrier)
     {
-        $binaryCarrier = [];
+        if (!is_array($carrier)) {
+            throw new InvalidCarrierException();
+        }
+
+        $state = null;
+        $attributes = null;
+
         foreach ($carrier as $k => $v) {
             $k = strtolower($k);
             switch ($k) {
                 case self::HTTP_HEADER_STATE_LOWER:
-                    $binaryCarrier[self::FIELD_STATE] = base64_decode($v);
+                    $state = base64_decode($v);
                     break;
                 case self::HTTP_HEADER_ATTRIBUTES_LOWER:
-                    $binaryCarrier[self::FIELD_ATTRIBUTES] = base64_decode($v);
+                    $attributes = base64_decode($v);
                     break;
             }
         }
+
+        $binaryCarrier = (new SplitBinaryCarrier())
+            ->setState($state)
+            ->setAttributes($attributes);
 
         return (new SplitBinaryPropagator($this->tracer))->joinTrace($operationName, $binaryCarrier);
     }
@@ -51,6 +69,8 @@ class PackedHttpHeadersPropagator extends Propagator
      * Implementations may raise implementation-specific exception
      * if injection fails.
      *
+     * @throws InvalidCarrierException
+     *
      * @param OpenTracing\Span $span
      * @param mixed $carrier
      * @return void
@@ -58,11 +78,14 @@ class PackedHttpHeadersPropagator extends Propagator
     public function injectSpan(OpenTracing\Span $span, &$carrier)
     {
         $this->validateSpan($span);
+        if (!is_array($carrier)) {
+            throw new InvalidCarrierException();
+        }
 
-        $binaryCarrier = [];
+        $binaryCarrier = new SplitBinaryCarrier();
         (new SplitBinaryPropagator($this->tracer))->injectSpan($span, $binaryCarrier);
 
-        $carrier[self::HTTP_HEADER_STATE_LOWER] = base64_encode($binaryCarrier[self::FIELD_STATE]);
-        $carrier[self::HTTP_HEADER_ATTRIBUTES_LOWER] = base64_encode($binaryCarrier[self::FIELD_ATTRIBUTES]);
+        $carrier[self::HTTP_HEADER_STATE_LOWER] = base64_encode($binaryCarrier->getState());
+        $carrier[self::HTTP_HEADER_ATTRIBUTES_LOWER] = base64_encode($binaryCarrier->getAttributes());
     }
 }
