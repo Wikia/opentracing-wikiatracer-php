@@ -2,7 +2,9 @@
 
 namespace OpenTracing\Wikia;
 
-class Format
+use OpenTracing;
+
+class Format extends OpenTracing\Format
 {
 
     const PACKED_HTTP_HEADERS = 'packed_http_headers';
