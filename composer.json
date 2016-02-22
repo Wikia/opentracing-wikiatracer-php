@@ -1,0 +1,36 @@
+{
+  "name": "Wikia/opentracing-wikiatracer-php",
+  "description": "Opentracing tracer for Wikia built on top of http://opentracing.io/",
+  "keywords": [
+    "opentracing",
+    "opentracing.io",
+    "tracer",
+    "span",
+    "tracing",
+    "soa"
+  ],
+  "homepage": "https://github.com/Wikia/opentracing-wikiatracer-php",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Władysław Bodzek",
+      "email": "wbodzek@o2.pl",
+      "homepage": "https://www.linkedin.com/in/w%C5%82adys%C5%82aw-bodzek-6b229b2",
+      "role": "Developer"
+    }
+  ],
+  "requires": {
+    "Wikia/opentracing-php": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "OpenTracing\\": "src/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "master"
+    }
+  }
+}
