@@ -3,6 +3,7 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\Exception\InvalidFormatException;
 
 class Tracer extends OpenTracing\Tracer
 {
@@ -26,13 +27,13 @@ class Tracer extends OpenTracing\Tracer
         $newSpanData->startTime = !is_null($startTime) ? $startTime : microtime(true);
 
         if (!$parent) {
-            $newSpanData->traceId = $this->randomId();
+            $newSpanData->traceId = $this->randomTextualId();
             $newSpanData->spanId = $newSpanData->traceId;
         } else {
             $parentSpanData = $parent->getData();
             $newSpanData->traceId = $parentSpanData->traceId;
             $newSpanData->parentSpanId = $parentSpanData->spanId;
-            $newSpanData->spanId = $this->randomId();
+            $newSpanData->spanId = $this->randomTextualId();
 
             $newSpanData->attributes = $parentSpanData->attributes;
         }
@@ -42,6 +43,10 @@ class Tracer extends OpenTracing\Tracer
         $newSpanData->tags = is_null($tags) ? [] : $tags;
 
         return new Span($this, $newSpanData);
+    }
+
+    protected function randomTextualId() {
+        return bin2hex($this->randomId());
     }
 
     protected function randomId()
@@ -54,7 +59,7 @@ class Tracer extends OpenTracing\Tracer
             } else {
                 $s = '';
                 for ($i = 0; $i < 8; $i++) {
-                    $s .= chr(mt_rand(0, 256));
+                    $s .= chr(mt_rand(0, 255));
                 }
 
                 return $s;
@@ -83,7 +88,7 @@ class Tracer extends OpenTracing\Tracer
         $this->initPropagators();
 
         if (empty( self::$propagators[$format] )) {
-            return null;
+            throw new InvalidFormatException();
         }
 
         return self::$propagators[$format];

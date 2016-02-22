@@ -26,6 +26,7 @@ class LoggerRecorder extends Recorder
                 'timestamp' => $timestamp,
                 'trace_id' => $spanData->traceId,
                 'span_id' => $spanData->spanId,
+                'span_name' => $spanData->operationName,
             ]);
 
         $level = @$payload['severity'] ?: self::DEFAULT_LEVEL;

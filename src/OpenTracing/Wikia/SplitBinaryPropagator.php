@@ -3,6 +3,8 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\Exception\EmptyCarrierException;
+use OpenTracing\Exception\CorruptedCarrierException;
 
 class SplitBinaryPropagator extends Propagator
 {
@@ -17,25 +19,35 @@ class SplitBinaryPropagator extends Propagator
      *
      * Upon success, the returned Span instance is already started.
      *
+     * @throws EmptyCarrierException
+     * @throws CorruptedCarrierException
+     *
      * @param string $operationName
      * @param mixed $carrier
      * @return Span
      */
     public function joinTrace($operationName, &$carrier)
     {
-        if (!$carrier || !is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )) {
-            throw new \InvalidArgumentException('Carrier does not contain valid tracer data');
+        if (!$carrier) {
+            throw new EmptyCarrierException();
+        }
+        if (!is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )) {
+            throw new CorruptedCarrierException();
         }
 
         $state = $carrier[self::FIELD_STATE];
         if (strlen($state) != 16) {
-            throw new \InvalidArgumentException('Carrier does not contain valid tracer data');
+            throw new CorruptedCarrierException();
         }
         $traceId = substr($state, 0, 8);
         $spanId = substr($state, 8, 8);
 
-        $attributes = $carrier[self::FIELD_ATTRIBUTES];
-        $attributes = $this->decodeArray($attributes);
+        try {
+            $attributes = $carrier[self::FIELD_ATTRIBUTES];
+            $attributes = $this->decodeArray($attributes);
+        } catch (\InvalidArgumentException $e) {
+            throw new CorruptedCarrierException();
+        }
 
         return $this->tracer->createSpan($traceId, $spanId, $attributes);
     }

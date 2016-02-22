@@ -3,6 +3,8 @@
 namespace OpenTracing\Wikia;
 
 use OpenTracing;
+use OpenTracing\Exception\EmptyCarrierException;
+use OpenTracing\Exception\CorruptedCarrierException;
 
 class SplitTextPropagator extends Propagator
 {
@@ -17,17 +19,23 @@ class SplitTextPropagator extends Propagator
      *
      * Upon success, the returned Span instance is already started.
      *
+     * @throws EmptyCarrierException
+     * @throws CorruptedCarrierException
+     *
      * @param string $operationName
      * @param mixed $carrier
      * @return Span
      */
     function joinTrace($operationName, &$carrier)
     {
-        if (!$carrier || !is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )
+        if (!$carrier) {
+            throw new EmptyCarrierException();
+        }
+        if (!is_array($carrier) || empty( $carrier[self::FIELD_STATE] ) || empty( $carrier[self::FIELD_ATTRIBUTES] )
             || !array_key_exists(self::FIELD_TRACE_ID, $carrier[self::FIELD_STATE])
             || !array_key_exists(self::FIELD_SPAN_ID, $carrier[self::FIELD_STATE])
         ) {
-            throw new \InvalidArgumentException('Carrier does not contain valid tracer data');
+            throw new CorruptedCarrierException();
         }
 
         $traceId = $carrier[self::FIELD_STATE][self::FIELD_TRACE_ID];
